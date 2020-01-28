@@ -4,9 +4,14 @@ import keras
 from keras.datasets import imdb
 import pandas as pd
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
+from keras.layers import Input, Dense, Dropout, Activation, BatchNormalization
+from keras import optimizers
 from keras.preprocessing.text import Tokenizer
 import matplotlib.pyplot as plt
+import tensorflow as tf
+import random
+
+print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
 np.random.seed(42)
 
@@ -17,6 +22,9 @@ print("battery_data_1 has {} data points with {} variables each.".format(*data.s
 y = data['SoC']
 x = data.drop(['SoC', 'sample_id', 'date', 'actual_time', 'runtime', 'T_1', 'T_2', 'T_3'], axis=1)
 x['T'] = round((data['T_1'] + data['T_2'] + data['T_3']) / 3, 1)
+
+# Playing with the input shape
+x = x.drop(['mode', 'B_E', 'T', 'delta_time'], axis=1)
 
 print(x, y)
 
@@ -32,25 +40,29 @@ y_test = y[train_size:]
 print("x_train has {} data points with {} variables each.".format(*x_train.shape))
 print("x_test has {} data points with {} variables each.".format(*x_test.shape))
 
-# TODO: Build the model architecture
-
 # TODO: Compile the model using a loss function and an optimizer.
 
 # Building the model
 model = Sequential()
-model.add(Dense(64, activation='relu', input_shape=x_train[0].shape))
-model.add(Dropout(.2))
+model.add(Dense(6, activation='relu', input_shape=x_train[0].shape))
+model.add(BatchNormalization())
+#model.add(Dropout(.2))
 model.add(Dense(256, activation='relu'))
-model.add(Dense(560, activation='relu'))
-model.add(Dropout(.1))
+model.add(BatchNormalization())
+# model.add(Dense(560, activation='relu'))
+# model.add(BatchNormalization())
+#model.add(Dropout(.1))
 model.add(Dense(1, activation='sigmoid'))
 
+# Optimizer
+adam = optimizers.Adam(lr=0.001)
+
 # Compiling the model
-model.compile(loss='mean_squared_error', optimizer='rmsprop', metrics=['accuracy'])
+model.compile(loss='mean_squared_error', optimizer=adam, metrics=['accuracy'])
 model.summary()
 
 # Training the model
-model.fit(x_train, y_train, epochs=100, batch_size=10000, verbose=0)
+model.fit(x_train, y_train, epochs=500, batch_size=10000, verbose=0)
 
 # Evaluating the model on the training and testing set
 score = model.evaluate(x_train, y_train)
@@ -62,7 +74,7 @@ print("\n Testing Accuracy:", score[1])
 #  number of epochs.
 # Running and evaluating the model
 hist = model.fit(x_train, y_train,
-                 batch_size=32,
+                 batch_size=64,
                  epochs=10,
                  validation_data=(x_test, y_test),
                  verbose=2)
