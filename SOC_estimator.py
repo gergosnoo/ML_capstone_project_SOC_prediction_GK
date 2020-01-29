@@ -30,23 +30,28 @@ class soc_nn:
         model.add(Dense(18, input_dim=len(self.x_train[0])))
         # (Dense(50, activation='relu', input_shape=self.x_train[0].shape))
         # model.add(BatchNormalization())
-        model.add(Dense(12, activation='relu',
-                        kernel_regularizer=regularizers.l2(0.01),
-                        activity_regularizer=regularizers.l2(0.01)))
+        model.add(Dense(12, activation='relu'))
+        model.add(Dense(120, activation='relu'))
+        model.add(Dense(20, activation='relu'))
         # model.add(Dropout(.1))
         # model.add(BatchNormalization())
         model.add(Dense(1, activation='sigmoid'))
 
         # Optimizer
-        adam = optimizers.Adam(lr=0.01)
+        adam = optimizers.Adam(lr=0.0001)
+        adadelta = optimizers.Adadelta(lr=1.0, rho=0.95)
+        rmsprop = optimizers.RMSprop(lr=0.001, rho=0.9)
 
         # Compiling the model
-        model.compile(loss='mean_squared_error', optimizer=adam,
-                      metrics=['accuracy'])
+        model.compile(loss='mean_absolute_error', optimizer=adadelta,
+                      metrics=['accuracy', 'mse'])
+
+        # [['accuracy'], ['accuracy', 'mse']]
         model.summary()
 
         # Training the model
-        model.fit(self.x_train, self.y_train, epochs=500, batch_size=5000, verbose=0)
+        model.fit(self.x_train, self.y_train, epochs=100, validation_data=(self.x_test, self.y_test),
+                  batch_size=500, verbose=1)
 
         # Evaluating the model on the training and testing set
         score = model.evaluate(self.x_train, self.y_train)
@@ -55,14 +60,18 @@ class soc_nn:
         print("\n Testing Accuracy:", score[1])
 
         # Running and evaluating the model
-        hist = model.fit(self.x_train, self.y_train,
-                         batch_size=64,
-                         epochs=10,
-                         validation_data=(self.x_test, self.y_test),
-                         verbose=2)
+        # hist = model.fit(self.x_train, self.y_train,
+        #                  batch_size=3,
+        #                  epochs=10,
+        #                  validation_data=(self.x_test, self.y_test),
+        #                  verbose=2)
 
         score = model.evaluate(self.x_test, self.y_test, verbose=0)
         print("Accuracy: ", score[1])
+
+        pred = model.predict(self.x_train, batch_size=32, verbose=0)
+        for i in pred:
+            print(i)
 
 
 def scale_between_0_and_1(df, label):
@@ -70,7 +79,7 @@ def scale_between_0_and_1(df, label):
 
 
 # Load the dataset
-data_1 = pd.read_csv('data/Augmented_data/battery_data_1_dV-C-roundV.csv')
+data_1 = pd.read_csv('data/Augmented_data/battery_data_2_dV-C-roundV.csv')
 print("battery_data_1 has {} data points with {} variables each."
       .format(*data_1.shape))
 data_2 = pd.read_csv('data/Augmented_data/battery_data_2_dV-C.csv')
