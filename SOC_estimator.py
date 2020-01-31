@@ -1,57 +1,48 @@
 # Imports
 import numpy as np
-import keras
-from keras.datasets import imdb
 import pandas as pd
 from keras.models import Sequential
-from keras.layers import Input, Dense, Dropout, Activation, BatchNormalization, regularizers
+from keras.layers import Dense
 from keras import optimizers
-from keras.preprocessing.text import Tokenizer
 import matplotlib.pyplot as plt
-import tensorflow as tf
-import random
 
 np.random.seed(42)
-# Print the number of GPUs
-print("Num GPUs Available: ",
-      len(tf.config.experimental.list_physical_devices('GPU')))
 
 
 class soc_nn:
-    def __init__(self, data):
+    def __init__(self, data, layer_size, no_nodes, no_epochs, batch, opt):
         self.x_train = data[0]
         self.y_train = data[1]
         self.x_test = data[2]
         self.y_test = data[3]
+        self.batch_size = batch
+        self.number_of_nodes = no_nodes
+        self.layer_size = layer_size
+        self.optimizer = opt
+        self.number_of_epochs = no_epochs
 
     def run(self):
         # Building the model
         model = Sequential()
-        model.add(Dense(18, input_dim=len(self.x_train[0])))
-        # (Dense(50, activation='relu', input_shape=self.x_train[0].shape))
-        # model.add(BatchNormalization())
-        model.add(Dense(12, activation='relu'))
-        # model.add(Dense(120, activation='relu'))
-        # model.add(Dense(20, activation='relu'))
-        # model.add(Dropout(.1))
-        # model.add(BatchNormalization())
+        model.add(Dense(len(self.x_train[0]), input_dim=len(self.x_train[0])))
+        if self.layer_size >= 1:
+            model.add(Dense(self.number_of_nodes[0], activation='relu'))
+        if self.layer_size >= 2:
+            model.add(Dense(self.number_of_nodes[1], activation='relu'))
+        if self.layer_size >= 3:
+            model.add(Dense(self.number_of_nodes[2], activation='relu'))
+
         model.add(Dense(1, activation='sigmoid'))
 
-        # Optimizer
-        adam = optimizers.Adam(lr=0.0001)
-        adadelta = optimizers.Adadelta(lr=1.0, rho=0.95)
-        rmsprop = optimizers.RMSprop(lr=0.001, rho=0.9)
-
         # Compiling the model
-        model.compile(loss='mean_absolute_error', optimizer=adadelta,
-                      metrics=['binary_accuracy', 'categorical_accuracy'])
+        model.compile(loss='mean_absolute_error', optimizer=self.optimizer, metrics=['accuracy'])
 
         # [['accuracy'], ['accuracy', 'mse']]
         model.summary()
 
         # Training the model
-        model.fit(self.x_train, self.y_train, epochs=300, validation_data=(self.x_test, self.y_test),
-                  batch_size=500, verbose=0)
+        model.fit(self.x_train, self.y_train, epochs=self.number_of_epochs, validation_data=(self.x_test, self.y_test),
+                  batch_size=self.batch_size, verbose=0)
 
         return model
 
@@ -84,6 +75,14 @@ def normalize_data(df):
     return df
 
 
+def optimizer():
+    # Optimizer
+    adam = optimizers.Adam(lr=0.0001)
+    adadelta = optimizers.Adadelta(lr=1.0, rho=0.95)
+    rmsprop = optimizers.RMSprop(lr=0.001, rho=0.9)
+    return [adam, adadelta, rmsprop]
+
+
 def data_prep(data1, data2):
     # Prepare usable input parameters
     data1['I_m'] = round(data1['mode'] * data1['B_E'] * data1['I_m'], 3)
@@ -92,31 +91,38 @@ def data_prep(data1, data2):
     y_d2 = scale_between_0_and_1(data2, 'SoC')
     x = []
     y = [y_d1, y_d2]
+    label = []
     for data in [data1, data2]:
         # sample_id, actual_time, mode, B_E, I_m, U_b, T_1, T_2, T_3, delta_time, runtime, dV, dV2, dV3, C
+        label.append('sample_id, actual_time, mode, B_E, I_m, U_b, T_1, T_2, T_3, delta_time, runtime, dV, dV2, dV3, C')
         x_15p = data.drop(['date', 'SoC'], axis=1)
         x_15p = normalize_data(x_15p)
 
         # I_m, U_b, T_2, delta_time, runtime, dV, dV2, dV3, C
+        label.append('I_m, U_b, T_2, delta_time, runtime, dV, dV2, dV3, C')
         x_9p = data.drop(['sample_id', 'date', 'actual_time', 'mode', 'B_E', 'T_1', 'T_3', 'SoC'], axis=1)
         x_9p = normalize_data(x_9p)
 
         # I_m, U_b, dV, dV2, dV3, C
+        label.append('I_m, U_b, dV, dV2, dV3, C')
         x_6p = data.drop(['sample_id', 'date', 'actual_time', 'mode', 'B_E',
                           'T_1', 'T_2', 'T_3', 'delta_time', 'runtime', 'SoC'], axis=1)
         x_6p = normalize_data(x_6p)
 
         # I_m, U_b, delta_time, runtime, dV
+        label.append('I_m, U_b, delta_time, runtime, dV')
         x_5p_1 = data.drop(['sample_id', 'date', 'actual_time', 'mode', 'B_E', 'T_1', 'T_2', 'T_3', 'dV2', 'dV3', 'C',
                             'SoC'], axis=1)
         x_5p_1 = normalize_data(x_5p_1)
 
         # I_m, U_b, dV, dV2, dV3
+        label.append('I_m, U_b, dV, dV2, dV3')
         x_5p_2 = data.drop(['sample_id', 'date', 'actual_time', 'mode', 'B_E',
                             'T_1', 'T_2', 'T_3', 'delta_time', 'runtime', 'C', 'SoC'], axis=1)
         x_5p_2 = normalize_data(x_5p_2)
 
         # I_m, U_b, delta_time
+        label.append('I_m, U_b, delta_time')
         x_3p = data.drop(['sample_id', 'runtime', 'dV', 'date', 'actual_time', 'mode', 'B_E', 'T_1', 'T_2', 'T_3',
                           'dV2', 'dV3', 'C', 'SoC'], axis=1)
         x_3p = normalize_data(x_3p)
@@ -124,6 +130,7 @@ def data_prep(data1, data2):
         # I_m, U_b, dV, dV2, dV3, C divided into 3 column groups based on charging mode of the battery
         # x_load has 18 parameters
         # Divide measurements based on charging load profile
+        label.append('I_m(ch,idl,dsch), U_b(ch,idl,dsch), dV(ch,idl,dsch), dV2(ch,idl,dsch), dV3(ch,idl,dsch), C(ch,idl,dsch)')
         x_load = pd.DataFrame()
 
         x_load['ch1'] = x_6p['U_b']
@@ -172,6 +179,7 @@ def data_prep(data1, data2):
 
         # I_m, U_b, dV, dV2, dV3 divided into 3 column groups based on charging mode of the battery
         # x_load_2 has 15 parameters
+        label.append('I_m(ch,idl,dsch), U_b(ch,idl,dsch), dV(ch,idl,dsch), dV2(ch,idl,dsch), dV3(ch,idl,dsch)')
         x_load_2 = x_load.drop(['ch5', 'idle5', 'dsch5'], axis=1)
 
         x.append([x_15p, x_9p, x_5p_1, x_5p_2, x_3p, x_6p, x_load, x_load_2])
@@ -184,67 +192,127 @@ def data_prep(data1, data2):
             x_test, y_test = x[1 - i][j].to_numpy(), y[1 - i].to_numpy()
             data_sets.append([x_train, y_train, x_test, y_test])
 
-    return data_sets
+    return data_sets, label
 
 
 def plot_run(error, reference, prediction, label):
-    plt.subplots(figsize=(10, 8))
+    plt.subplots(figsize=(10, 12))
     #
-    plt.subplot(2, 1, 1)
+    plt.subplot(3, 1, 1)
     plt.title('x = [' + label + ']')
     plt.plot(reference, label='Reference SoC')
     plt.plot(prediction, label='Prediction SoC')
-    # plt.plot(data['runtime'], data['I_m'], label='I_m')
     plt.xlabel('sample_id')
     plt.ylabel('SoC')
     plt.grid(True)
     plt.legend()
 
-    plt.subplot(2, 1, 2)
-    plt.title('Error')
+    plt.subplot(3, 1, 2)
+    plt.title('Error function')
     plt.plot(error, label='Error in SoC prediction')
-    # plt.plot(data['runtime'], data['I_m'], label='I_m')
     plt.xlabel('sample_id')
-    plt.ylabel('Error function')
+    plt.ylabel('Error = |y_ref - y_pred|')
+    plt.grid(True)
+    plt.legend()
+
+    plt.subplot(3, 1, 3)
+    plt.title('Accuracy')
+    plt.plot(1-error, label='Accuracy of ' + label)
+    plt.xlabel('sample_id')
+    plt.ylabel('Accuracy = 1 - |y_ref - y_pred|')
     plt.grid(True)
     plt.legend()
 
     plt.tight_layout()
+    plt.savefig('plot/' + label + '.png')
+    plt.show()
+
+
+def plot_performance(error, accuracy):
+    plt.subplots(figsize=(10, 8))
+    #
+    plt.subplot(2, 1, 1)
+    plt.title('Error function')
+    plt.plot(error, label='Error in SoC prediction')
+    plt.xlabel('neuralnet_id')
+    plt.ylabel('Error = |y_ref - y_pred|')
+    plt.grid(True)
+    plt.legend()
+
+    plt.subplot(2, 1, 2)
+    plt.title('Accuracy')
+    plt.plot(accuracy, label='Accuracy of prediction')
+    plt.xlabel('neuralnet_id')
+    plt.ylabel('Accuracy = 1 - |y_ref - y_pred|')
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig('plot/performance.png')
     plt.show()
 
 
 # Load the dataset
-data_1 = pd.read_csv('data/Augmented_data/battery_data_2_dV-C-roundV.csv')
+data_1 = pd.read_csv('data/Augmented_data/battery_data_1_dV-C-roundV.csv')
 print("battery_data_1 has {} data points with {} variables each."
       .format(*data_1.shape))
-data_2 = pd.read_csv('data/Augmented_data/battery_data_2_dV-C.csv')
+data_2 = pd.read_csv('data/Augmented_data/battery_data_2_dV-C-roundV.csv')
 print("battery_data_2 has {} data points with {} variables each."
       .format(*data_2.shape))
 
 
-data_sets = data_prep(data_1, data_2)
+data_sets, labels = data_prep(data_1, data_2)
+optimizers = optimizer()
 
+hidden_layer_size = [1, 2, 3]
+number_of_nodes = [18, 120, 64]
+batch_sizes = [1000, 500, 200, 100, 50]
+number_of_epochs = [50, 150, 300]
 
 errors = []
 accuracies = []
+cnt = 1
 for i in range(len(data_sets)):
-    soc_nn = soc_nn(data_sets[i])
-    model = soc_nn.run()
+    for ls in range(len(hidden_layer_size)):
+        for nn in range(len(number_of_nodes)):
+            for ne in range(len(number_of_epochs)):
+                for bs in range(len(batch_sizes)):
+                    for o in range(len(optimizers)):
+                        neural_net = soc_nn(data_sets[i],
+                                            hidden_layer_size[ls],
+                                            number_of_nodes[nn],
+                                            number_of_epochs[ne],
+                                            batch_sizes[bs],
+                                            optimizers[o])
 
-    x_test = data_sets[i][2]
-    y_test = data_sets[i][3]
+                        model = neural_net.run()
 
-    pred = model.predict(x_test, batch_size=32, verbose=0)
-    prediction = []
-    for j in range(len(pred)):
-        prediction.append(pred[j][0])
+                        x_test = data_sets[i][2]
+                        y_test = data_sets[i][3]
 
-    err = np.subtract(y_test, prediction)
-    error = np.absolute(err)
-    err_mean = np.mean(error)
-    accuracies.append(1 - err_mean)
-    errors.append(err_mean)
-    print('Error: ', err_mean)
-    print('Accuracy: ', 1 - err_mean)
-    plot_run(error, y_test, prediction,
-             'sample_id, actual_time, mode, B_E, I_m, U_b, T_1, T_2, T_3, delta_time, runtime, dV, dV2, dV3, C')
+                        label = labels[i] + '\n' + 'ls: {} nn: {} ne: {} bs: {} o: {}'.format(hidden_layer_size[ls],
+                                                                                              number_of_nodes[nn],
+                                                                                              number_of_epochs[ne],
+                                                                                              batch_sizes[bs],
+                                                                                              o+1)
+
+                        label = str(cnt) + '_' + label
+
+                        pred = model.predict(x_test, batch_size=batch_sizes[bs], verbose=0)
+                        prediction = []
+                        for j in range(len(pred)):
+                            prediction.append(pred[j][0])
+
+                        err = np.subtract(y_test, prediction)
+                        error = np.absolute(err)
+                        err_mean = np.mean(error)
+                        accuracies.append(1 - err_mean)
+                        errors.append(err_mean)
+                        print('Error: ', err_mean)
+                        print('Accuracy: ', 1 - err_mean)
+                        plot_run(error, y_test, prediction, label)
+                        cnt += 1
+
+np.savetxt("error.csv", errors, delimiter=",")
+np.savetxt("accuracy.csv", accuracies, delimiter=",")
+plot_performance(errors, accuracies)
