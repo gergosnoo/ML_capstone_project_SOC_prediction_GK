@@ -1,6 +1,9 @@
+#%%
+
 # Imports
 import numpy as np
 import pandas as pd
+import csv
 from keras.models import Sequential
 from keras.layers import Dense
 from keras import optimizers
@@ -8,6 +11,8 @@ import matplotlib.pyplot as plt
 
 np.random.seed(42)
 
+
+#%%
 
 class soc_nn:
     def __init__(self, data, layer_size, no_nodes, no_epochs, batch, opt):
@@ -36,9 +41,7 @@ class soc_nn:
 
         # Compiling the model
         model.compile(loss='mean_absolute_error', optimizer=self.optimizer, metrics=['accuracy'])
-
-        # [['accuracy'], ['accuracy', 'mse']]
-        model.summary()
+        # model.summary()
 
         # Training the model
         model.fit(self.x_train, self.y_train, epochs=self.number_of_epochs, validation_data=(self.x_test, self.y_test),
@@ -77,10 +80,10 @@ def normalize_data(df):
 
 def optimizer():
     # Optimizer
-    adam = optimizers.Adam(lr=0.0001)
+    # adam = optimizers.Adam(lr=0.0001)
     adadelta = optimizers.Adadelta(lr=1.0, rho=0.95)
-    rmsprop = optimizers.RMSprop(lr=0.001, rho=0.9)
-    return [adam, adadelta, rmsprop]
+    # rmsprop = optimizers.RMSprop(lr=0.001, rho=0.9)
+    return [adadelta]
 
 
 def data_prep(data1, data2):
@@ -90,39 +93,39 @@ def data_prep(data1, data2):
     y_d1 = scale_between_0_and_1(data1, 'SoC')
     y_d2 = scale_between_0_and_1(data2, 'SoC')
     x = []
-    y = [y_d1, y_d2]
+    y = [y_d2, y_d1]
     label = []
-    for data in [data1, data2]:
+    for data in [data2, data1]:
         # sample_id, actual_time, mode, B_E, I_m, U_b, T_1, T_2, T_3, delta_time, runtime, dV, dV2, dV3, C
-        label.append('sample_id, actual_time, mode, B_E, I_m, U_b, T_1, T_2, T_3, delta_time, runtime, dV, dV2, dV3, C')
+        label.append('sample_id-actual_time-mode-B_E-I_m-U_b-T_1-T_2-T_3-delta_time-runtime-dV-dV2-dV3-C')
         x_15p = data.drop(['date', 'SoC'], axis=1)
         x_15p = normalize_data(x_15p)
 
         # I_m, U_b, T_2, delta_time, runtime, dV, dV2, dV3, C
-        label.append('I_m, U_b, T_2, delta_time, runtime, dV, dV2, dV3, C')
+        label.append('I_m-U_b-T_2-delta_time-runtime-dV-dV2-dV3-C')
         x_9p = data.drop(['sample_id', 'date', 'actual_time', 'mode', 'B_E', 'T_1', 'T_3', 'SoC'], axis=1)
         x_9p = normalize_data(x_9p)
 
         # I_m, U_b, dV, dV2, dV3, C
-        label.append('I_m, U_b, dV, dV2, dV3, C')
+        # label.append('I_m-U_b-dV-dV2-dV3-C')
         x_6p = data.drop(['sample_id', 'date', 'actual_time', 'mode', 'B_E',
                           'T_1', 'T_2', 'T_3', 'delta_time', 'runtime', 'SoC'], axis=1)
         x_6p = normalize_data(x_6p)
 
         # I_m, U_b, delta_time, runtime, dV
-        label.append('I_m, U_b, delta_time, runtime, dV')
+        # label.append('I_m-U_b-delta_time-runtime-dV')
         x_5p_1 = data.drop(['sample_id', 'date', 'actual_time', 'mode', 'B_E', 'T_1', 'T_2', 'T_3', 'dV2', 'dV3', 'C',
                             'SoC'], axis=1)
         x_5p_1 = normalize_data(x_5p_1)
 
         # I_m, U_b, dV, dV2, dV3
-        label.append('I_m, U_b, dV, dV2, dV3')
+        # label.append('I_m-U_b-dV-dV2-dV3')
         x_5p_2 = data.drop(['sample_id', 'date', 'actual_time', 'mode', 'B_E',
                             'T_1', 'T_2', 'T_3', 'delta_time', 'runtime', 'C', 'SoC'], axis=1)
         x_5p_2 = normalize_data(x_5p_2)
 
         # I_m, U_b, delta_time
-        label.append('I_m, U_b, delta_time')
+        label.append('I_m-U_b-delta_time')
         x_3p = data.drop(['sample_id', 'runtime', 'dV', 'date', 'actual_time', 'mode', 'B_E', 'T_1', 'T_2', 'T_3',
                           'dV2', 'dV3', 'C', 'SoC'], axis=1)
         x_3p = normalize_data(x_3p)
@@ -130,7 +133,7 @@ def data_prep(data1, data2):
         # I_m, U_b, dV, dV2, dV3, C divided into 3 column groups based on charging mode of the battery
         # x_load has 18 parameters
         # Divide measurements based on charging load profile
-        label.append('I_m(ch,idl,dsch), U_b(ch,idl,dsch), dV(ch,idl,dsch), dV2(ch,idl,dsch), dV3(ch,idl,dsch), C(ch,idl,dsch)')
+        # label.append('I_m(3)-U_b(3)-dV(3)-dV2(3)-dV3(3)-C(3)')
         x_load = pd.DataFrame()
 
         x_load['ch1'] = x_6p['U_b']
@@ -179,10 +182,11 @@ def data_prep(data1, data2):
 
         # I_m, U_b, dV, dV2, dV3 divided into 3 column groups based on charging mode of the battery
         # x_load_2 has 15 parameters
-        label.append('I_m(ch,idl,dsch), U_b(ch,idl,dsch), dV(ch,idl,dsch), dV2(ch,idl,dsch), dV3(ch,idl,dsch)')
+        # label.append('I_m(3)-U_b(3)-dV(3)-dV2(3)-dV3(3)')
         x_load_2 = x_load.drop(['ch5', 'idle5', 'dsch5'], axis=1)
 
-        x.append([x_15p, x_9p, x_5p_1, x_5p_2, x_3p, x_6p, x_load, x_load_2])
+        # x.append([x_15p, x_9p, x_5p_1, x_5p_2, x_3p, x_6p, x_load, x_load_2])
+        x.append([x_15p, x_9p, x_3p])
 
     data_sets = []
 
@@ -196,10 +200,10 @@ def data_prep(data1, data2):
 
 
 def plot_run(error, reference, prediction, label):
-    plt.subplots(figsize=(10, 12))
+    plt.subplots(figsize=(15, 18))
     #
     plt.subplot(3, 1, 1)
-    plt.title('x = [' + label + ']')
+    plt.title('neuralnet_id: ' + label.split('_')[0])
     plt.plot(reference, label='Reference SoC')
     plt.plot(prediction, label='Prediction SoC')
     plt.xlabel('sample_id')
@@ -217,40 +221,50 @@ def plot_run(error, reference, prediction, label):
 
     plt.subplot(3, 1, 3)
     plt.title('Accuracy')
-    plt.plot(1-error, label='Accuracy of ' + label)
+    plt.plot(1 - error, label='Accuracy id_' + label.split('_')[0] + '')
     plt.xlabel('sample_id')
     plt.ylabel('Accuracy = 1 - |y_ref - y_pred|')
     plt.grid(True)
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig('plot/' + label + '.png')
-    plt.show()
+    plt.savefig('data/plot/' + label.split('_')[0] + '.png')
+    # plt.show()
 
 
-def plot_performance(error, accuracy):
-    plt.subplots(figsize=(10, 8))
+def plot_trend(error, std, accuracy, label):
+    plt.subplots(figsize=(15, 18))
     #
-    plt.subplot(2, 1, 1)
-    plt.title('Error function')
-    plt.plot(error, label='Error in SoC prediction')
+    plt.subplot(3, 1, 1)
+    plt.title('Error functions')
+    plt.plot(error, label='Error in SoC predictions')
     plt.xlabel('neuralnet_id')
     plt.ylabel('Error = |y_ref - y_pred|')
     plt.grid(True)
     plt.legend()
 
-    plt.subplot(2, 1, 2)
+    plt.subplot(3, 1, 2)
+    plt.title('Error function standard deviation')
+    plt.plot(std, label='Error STD in SoC predictions')
+    plt.xlabel('neuralnet_id')
+    plt.ylabel('sigma')
+    plt.grid(True)
+    plt.legend()
+
+    plt.subplot(3, 1, 3)
     plt.title('Accuracy')
-    plt.plot(accuracy, label='Accuracy of prediction')
+    plt.plot(accuracy, label='Accuracy of predictions')
     plt.xlabel('neuralnet_id')
     plt.ylabel('Accuracy = 1 - |y_ref - y_pred|')
     plt.grid(True)
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig('plot/performance.png')
-    plt.show()
+    plt.savefig('data/plot/trend/' + label + '_trend.png')
+    # plt.show()
 
+
+#%%
 
 # Load the dataset
 data_1 = pd.read_csv('data/Augmented_data/battery_data_1_dV-C-roundV.csv')
@@ -260,18 +274,23 @@ data_2 = pd.read_csv('data/Augmented_data/battery_data_2_dV-C-roundV.csv')
 print("battery_data_2 has {} data points with {} variables each."
       .format(*data_2.shape))
 
-
 data_sets, labels = data_prep(data_1, data_2)
-optimizers = optimizer()
 
-hidden_layer_size = [1, 2, 3]
-number_of_nodes = [18, 120, 64]
-batch_sizes = [1000, 500, 200, 100, 50]
-number_of_epochs = [50, 150, 300]
+#%%
+
+optimizers = optimizer()
+hidden_layer_size = [1, 2]
+number_of_nodes = [[18, 12, 64], [36, 24, 24]]
+batch_sizes = [1000, 500]
+number_of_epochs = [50, 150, 250]
 
 errors = []
 accuracies = []
-cnt = 1
+err_stds = []
+names = []
+cnt = 200
+
+trend_performance = []
 for i in range(len(data_sets)):
     for ls in range(len(hidden_layer_size)):
         for nn in range(len(number_of_nodes)):
@@ -290,13 +309,15 @@ for i in range(len(data_sets)):
                         x_test = data_sets[i][2]
                         y_test = data_sets[i][3]
 
-                        label = labels[i] + '\n' + 'ls: {} nn: {} ne: {} bs: {} o: {}'.format(hidden_layer_size[ls],
-                                                                                              number_of_nodes[nn],
-                                                                                              number_of_epochs[ne],
-                                                                                              batch_sizes[bs],
-                                                                                              o+1)
-
+                        model_parameters = '_ls-{}_nn-{}_ne-{}_bs-{}_o-{}'.format(hidden_layer_size[ls],
+                                                                                  number_of_nodes[nn][:ls+1],
+                                                                                  number_of_epochs[ne],
+                                                                                  batch_sizes[bs],
+                                                                                  o + 1)
+                        names.append(labels[i])
+                        label = labels[i] + model_parameters
                         label = str(cnt) + '_' + label
+                        print(label)
 
                         pred = model.predict(x_test, batch_size=batch_sizes[bs], verbose=0)
                         prediction = []
@@ -306,13 +327,38 @@ for i in range(len(data_sets)):
                         err = np.subtract(y_test, prediction)
                         error = np.absolute(err)
                         err_mean = np.mean(error)
+                        err_std = np.std(error)
                         accuracies.append(1 - err_mean)
                         errors.append(err_mean)
+                        err_stds.append(err_std)
                         print('Error: ', err_mean)
                         print('Accuracy: ', 1 - err_mean)
                         plot_run(error, y_test, prediction, label)
+
+                        trend_performance.append([cnt,
+                                                  names[cnt - 200],
+                                                  hidden_layer_size[ls],
+                                                  number_of_nodes[nn][:ls+1],
+                                                  number_of_epochs[ne],
+                                                  batch_sizes[bs],
+                                                  errors[cnt - 200],
+                                                  err_stds[cnt - 200],
+                                                  accuracies[cnt - 200]])
                         cnt += 1
 
+                        np.savetxt("trend_performance.csv", trend_performance, fmt="%s", delimiter=";")
+
+                        plot_trend(errors, err_stds, accuracies, label.split('_')[0])
+
+#%%
+
 np.savetxt("error.csv", errors, delimiter=",")
+np.savetxt("err_std.csv", err_stds, delimiter=",")
 np.savetxt("accuracy.csv", accuracies, delimiter=",")
-plot_performance(errors, accuracies)
+
+
+
+#%%
+
+
+
