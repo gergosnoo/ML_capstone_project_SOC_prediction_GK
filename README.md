@@ -27,4 +27,4 @@ import matplotlib.pyplot as plt
 
 ### [Final results](https://github.com/gergosnoo/ML_capstone_project_SOC_prediction_GK/tree/master/data/plot)
 
-##$ Final solution model is represented on 'data/plot/41.png' and 'data/plot/228.png'.
+## Final solution model is represented on 'data/plot/41.png' and 'data/plot/228.png'.
