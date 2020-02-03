@@ -13,7 +13,8 @@ Please email [gk@nervesmartsystems.com](mailto:gk@nervesmartsystems.com) if you 
 
 Software required: [Power BI Desktop](https://powerbi.microsoft.com/en-us/desktop/)
 
-Location of datasets: [ML_capstone_project_SOC_prediction_GK](https://github.com/gergosnoo/ML_capstone_project_SOC_prediction_GK)
+Location of datasets: [data 1](https://github.com/gergosnoo/ML_capstone_project_SOC_prediction_GK/blob/master/data/Augmented_data/battery_data_1_dV-C-roundV.csv)
+[data 2](https://github.com/gergosnoo/ML_capstone_project_SOC_prediction_GK/blob/master/data/Augmented_data/battery_data_2_dV-C-roundV.csv)
 
 ### Used libaries
 import numpy as np
