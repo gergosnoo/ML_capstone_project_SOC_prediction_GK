@@ -1,5 +1,3 @@
-#%%
-
 # Imports
 import numpy as np
 import pandas as pd
@@ -11,8 +9,6 @@ import matplotlib.pyplot as plt
 
 np.random.seed(42)
 
-
-#%%
 
 class soc_nn:
     def __init__(self, data, layer_size, no_nodes, no_epochs, batch, opt):
@@ -264,8 +260,6 @@ def plot_trend(error, std, accuracy, label):
     # plt.show()
 
 
-#%%
-
 # Load the dataset
 data_1 = pd.read_csv('data/Augmented_data/battery_data_1_dV-C-roundV.csv')
 print("battery_data_1 has {} data points with {} variables each."
@@ -276,8 +270,7 @@ print("battery_data_2 has {} data points with {} variables each."
 
 data_sets, labels = data_prep(data_1, data_2)
 
-#%%
-
+# Define parameter settings
 optimizers = optimizer()
 hidden_layer_size = [1, 2]
 number_of_nodes = [[18, 12, 64], [36, 24, 24]]
@@ -349,16 +342,5 @@ for i in range(len(data_sets)):
                         np.savetxt("trend_performance.csv", trend_performance, fmt="%s", delimiter=";")
 
                         plot_trend(errors, err_stds, accuracies, label.split('_')[0])
-
-#%%
-
-np.savetxt("error.csv", errors, delimiter=",")
-np.savetxt("err_std.csv", err_stds, delimiter=",")
-np.savetxt("accuracy.csv", accuracies, delimiter=",")
-
-
-
-#%%
-
 
 
