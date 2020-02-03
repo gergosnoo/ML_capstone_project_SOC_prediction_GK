@@ -25,6 +25,5 @@ from keras.layers import Dense
 from keras import optimizers
 import matplotlib.pyplot as plt
 
-### Final results
-![alt text](https://raw.githubusercontent.com/gergosnoo/ML_capstone_project_SOC_prediction_GK/master/data/plot/41.png?token=AEIO7ND22ZXF5D6Y54RUXCK6G5WV2)
-![alt text](https://raw.githubusercontent.com/gergosnoo/ML_capstone_project_SOC_prediction_GK/master/data/plot/228.png?token=AEIO7NDXG6NHT7DWF2Y7VCS6G5W2M)
+### [Final results](https://github.com/gergosnoo/ML_capstone_project_SOC_prediction_GK/tree/master/data/plot)
+
