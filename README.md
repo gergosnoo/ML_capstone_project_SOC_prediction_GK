@@ -14,3 +14,6 @@ Please email [gk@nervesmartsystems.com](mailto:gk@nervesmartsystems.com) if you 
 Software required: [Power BI Desktop](https://powerbi.microsoft.com/en-us/desktop/)
 
 Location of datasets: [ML_capstone_project_SOC_prediction_GK](https://github.com/gergosnoo/ML_capstone_project_SOC_prediction_GK)
+### Final results
+![alt text](https://raw.githubusercontent.com/gergosnoo/ML_capstone_project_SOC_prediction_GK/master/data/plot/41.png?token=AEIO7ND22ZXF5D6Y54RUXCK6G5WV2)
+![alt text](https://raw.githubusercontent.com/gergosnoo/ML_capstone_project_SOC_prediction_GK/master/data/plot/228.png?token=AEIO7NDXG6NHT7DWF2Y7VCS6G5W2M)
